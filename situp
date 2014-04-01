@@ -1,0 +1,75 @@
+#!/usr/bin/python
+
+
+# Port-Scanning can be charged as a crime/suspicion to commit a crime in some juristications! Protect yourself and be smart!
+
+import socket
+import sys
+import subprocess
+import os
+from subprocess import call
+
+
+mgmtip = (raw_input("Management?: "))
+privateip = (raw_input("Private?: "))
+publicip = (raw_input("Public?: "))
+
+list = [mgmtip, privateip, publicip]
+for ip in list:
+        ping = subprocess.call(['ping', '-c', '2', ip], stdout=subprocess.PIPE)
+        if (ping == 0):
+                print ip, "is responding to pings!"
+        elif ping == 2:
+                print ip, "is not responding to ping attempts!"
+        else :
+                print "ping attempt to", ip, "failed"
+                nmapport = subprocess.call(['nmap', '-sP', ip], stdout=subprocess.PIPE)
+                if nmapport == 0:
+                        print "Port Scan Successful! Server is up!"
+
+                else:
+                        print "Port Scan Unsuccessful, this server is down!!"
+
+yes=set(['yes','y','ye',''])
+no=set(['no','n','nah'])
+
+decide = raw_input("Would you like to check for an open SSH port?(y/n)").lower()
+if decide in yes:
+        server=publicip
+
+        try:
+                for port in range(1,65335):
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        result = sock.connect_ex((server, port))
+                        list = str(port)
+                        if result == 0:
+                                port = str(port)
+                                print "TRYING PORT: "+port
+                                ssh = subprocess.Popen(["ssh","root@"+server,"-p"+port,"-o ConnectTimeout=1"],
+                                        shell = False,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+                                result1 = ssh.stdout.readlines()
+                                if result1 == []:
+                                      error = ssh.stderr.readlines()
+                                      print >>sys.stderr, "!!ERROR: CONNECTION ATTEMPT OVER PORT "+port+" TIMED OUT!!"
+				else:
+                                      print "!!!PORT FOUND!PORT IS: "+port
+
+        except socket.gaierror:
+                print "Could not resolve hostname"
+                sys.exit()
+
+        except socket.error:
+                print "could not establish a connection"
+                sys.exit()
+	except socket.timeout:
+		print "its timing out(yay)"
+		sys.exit() 
+elif decide in no:
+        print "ok then, have a great day"
+else:
+        print "thats not really a decision? run this agian as punishment!"
+
+
+
